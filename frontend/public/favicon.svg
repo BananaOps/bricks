@@ -1,0 +1,22 @@
+<!--
+  Icône d'application : la marque sur pastille cobalt.
+  Proportions de la charte — rayon 26 % du côté, marge 16 %.
+  La face supérieure passe en blanc : sur un fond bleu plein, c'est le seul
+  contraste qui tienne la lecture aux tailles d'onglet.
+-->
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="64" height="64">
+  <rect width="64" height="64" rx="16.6" fill="#2563EB"/>
+  <g transform="translate(10.24 10.24) scale(0.68)">
+    <path d="M8 24v14l24 14V38z" fill="#1E40AF"/>
+    <path d="M56 24v14L32 52V38z" fill="#1D4ED8"/>
+    <path d="M32 10l24 14-24 14L8 24z" fill="#FFFFFF"/>
+    <ellipse cx="32" cy="19" rx="5.2" ry="3" fill="#1D4ED8"/>
+    <ellipse cx="44" cy="26" rx="5.2" ry="3" fill="#1D4ED8"/>
+    <ellipse cx="20" cy="26" rx="5.2" ry="3" fill="#1D4ED8"/>
+    <ellipse cx="32" cy="33" rx="5.2" ry="3" fill="#1D4ED8"/>
+    <ellipse cx="32" cy="17" rx="5.2" ry="3" fill="#EFF6FF"/>
+    <ellipse cx="44" cy="24" rx="5.2" ry="3" fill="#EFF6FF"/>
+    <ellipse cx="20" cy="24" rx="5.2" ry="3" fill="#EFF6FF"/>
+    <ellipse cx="32" cy="31" rx="5.2" ry="3" fill="#EFF6FF"/>
+  </g>
+</svg>

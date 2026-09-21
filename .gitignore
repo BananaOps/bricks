@@ -1,0 +1,16 @@
+# Go
+backend/bricks-server
+backend/*.db
+backend/*.db-shm
+backend/*.db-wal
+
+# Node
+node_modules/
+frontend/dist/
+
+# Task — empreintes des tâches à sources/generates
+.task/
+
+# Env
+.env
+.env.local

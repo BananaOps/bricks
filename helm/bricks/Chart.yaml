@@ -1,0 +1,6 @@
+apiVersion: v2
+name: bricks
+description: A Helm chart dedicated to deploy bricks, a capacity-aware roadmap planner
+type: application
+version: 0.1.0
+appVersion: "0.1.0"

@@ -1,0 +1,85 @@
+name: Go Test
+
+on:
+  pull_request:
+    paths:
+      - .github/workflows/go-test.yml
+      - backend/**
+      - .golangci.yml
+
+jobs:
+  linting:
+    name: Go lint
+    runs-on: ubuntu-latest
+    steps:
+
+    - name: Check out code into the Go module directory
+      uses: actions/checkout@v6
+
+    - name: Set up Go 1.x
+      uses: actions/setup-go@v6
+      with:
+        go-version: stable
+        cache-dependency-path: backend/go.sum
+
+    - name: golangci-lint
+      uses: golangci/golangci-lint-action@v7
+      with:
+        args: --timeout=30m
+        working-directory: backend
+
+  security:
+    name: Go Security
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: backend
+    steps:
+
+    - name: Check out code into the Go module directory
+      uses: actions/checkout@v6
+
+    - name: Set up Go 1.x
+      uses: actions/setup-go@v6
+      with:
+        go-version: stable
+        cache-dependency-path: backend/go.sum
+
+    # Le module vit dans backend/ ; l'action securego/gosec s'exécute à la
+    # racine du dépôt, où l'absence de go.mod lui ferait charger zéro paquet et
+    # rapporter zéro problème. Le binaire est donc lancé depuis le module.
+    - name: Install Gosec
+      run: go install github.com/securego/gosec/v2/cmd/gosec@latest
+
+    - name: Run Gosec Security Scanner
+      run: gosec -exclude=G103,G115 -fmt=json -out=gosec.json -stdout -verbose=text ./...
+
+    # Garde-fou : un scan qui ne lit aucun fichier passerait au vert en silence.
+    - name: Ensure the scan actually read the sources
+      run: |
+        files=$(python3 -c "import json;print(json.load(open('gosec.json'))['Stats']['files'])")
+        echo "fichiers analysés : $files"
+        test "$files" -gt 0
+
+  test:
+    name: Go test
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: backend
+    steps:
+
+    - name: Check out code into the Go module directory
+      uses: actions/checkout@v6
+
+    - name: Set up Go 1.x
+      uses: actions/setup-go@v6
+      with:
+        go-version: stable
+        cache-dependency-path: backend/go.sum
+
+    - name: Install
+      run: go mod download -x
+
+    - name: Test
+      run: go test -v ./...

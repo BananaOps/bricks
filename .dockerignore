@@ -1,0 +1,43 @@
+# Git
+.git
+.gitignore
+.github
+
+# Documentation
+*.md
+docs/
+CHANGELOG.md
+CONTRIBUTING.md
+LICENSE
+
+# IDE
+.vscode/
+.idea/
+
+# Dépendances et artefacts : réinstallés et recompilés dans l'image
+frontend/node_modules/
+frontend/dist/
+backend/bricks-server
+bricks
+*.exe
+*.exe~
+*.dll
+*.so
+*.dylib
+*.test
+*.out
+
+# Base locale de développement
+backend/*.db
+backend/*.db-shm
+backend/*.db-wal
+
+# Kubernetes
+helm/
+
+# Divers
+.env
+.env.local
+.env.production
+.task/
+Taskfile.yml

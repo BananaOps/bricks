@@ -1,0 +1,265 @@
+/*
+ * Global shell. Colours, type and spacing are expressed as custom properties so
+ * the palette lives in one place; per-brick geometry stays inline, since it is
+ * computed per render and has no business in a stylesheet.
+ */
+:root {
+  --ink: #18181b;
+  --ink-2: #27272a;
+  --ink-3: #3f3f46;
+  --muted: #52525b;
+  --muted-2: #71717a;
+  --line-strong: #d4d4d8;
+  --line: #e4e4e7;
+  --line-soft: #f4f4f5;
+  --surface: #ffffff;
+  --surface-alt: #fcfcfd;
+  --canvas: #fafafa;
+
+  --accent: #2563eb;
+  --accent-strong: #1d4ed8;
+  --accent-soft: #eff6ff;
+  --accent-line: #bfd3fd;
+
+  --danger: #dc2626;
+  --danger-ink: #b91c1c;
+  --danger-soft: #fef2f2;
+  --danger-line: #fecaca;
+  --danger-chip: #fee2e2;
+
+  --sans: 'Instrument Sans', system-ui, -apple-system, sans-serif;
+  --mono: 'JetBrains Mono', ui-monospace, 'SFMono-Regular', monospace;
+
+  --radius-sm: 6px;
+  --radius: 8px;
+  --radius-lg: 14px;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  margin: 0;
+  background: var(--canvas);
+}
+
+body {
+  font-family: var(--sans);
+  color: var(--ink);
+  -webkit-font-smoothing: antialiased;
+}
+
+#root {
+  min-height: 100vh;
+}
+
+input,
+button,
+select,
+textarea {
+  font-family: inherit;
+}
+
+button {
+  border: none;
+  background: none;
+  padding: 0;
+  color: inherit;
+  cursor: pointer;
+}
+
+/* Thin, unobtrusive scrollbars on the grid and the palette. */
+.bk-scroll::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+.bk-scroll::-webkit-scrollbar-thumb {
+  background: var(--line-strong);
+  border-radius: 99px;
+  border: 3px solid transparent;
+  background-clip: content-box;
+}
+.bk-scroll::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+/*
+ * The quick-add affordance appears only under the pointer. Driving it from CSS
+ * hover rather than React state keeps 132 grid cells off the render path.
+ */
+.bk-add {
+  opacity: 0;
+  transition: opacity 90ms;
+}
+.bk-cell:hover .bk-add {
+  opacity: 1;
+}
+
+/* Interactive chrome: subtle, and never moving layout on hover. */
+.bk-ghost-button {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  padding: 7px 12px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: var(--surface);
+  font: 500 13px/1 var(--sans);
+  color: var(--ink-3);
+  white-space: nowrap;
+  cursor: pointer;
+  transition: border-color 120ms, background 120ms, color 120ms;
+}
+.bk-ghost-button:hover {
+  border-color: var(--line-strong);
+  background: var(--canvas);
+}
+
+.bk-primary-button {
+  padding: 7px 13px;
+  border-radius: var(--radius);
+  background: var(--accent);
+  color: #fff;
+  font: 600 13px/1 var(--sans);
+  white-space: nowrap;
+  box-shadow: 0 1px 2px rgb(37 99 235 / 0.3);
+  transition: background 120ms;
+}
+.bk-primary-button:hover {
+  background: var(--accent-strong);
+}
+
+.bk-icon-button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 27px;
+  height: 27px;
+  border-radius: 7px;
+  color: var(--muted-2);
+  flex: none;
+  transition: background 120ms, color 120ms;
+}
+.bk-icon-button:hover {
+  background: var(--line-soft);
+  color: var(--ink);
+}
+
+.bk-search {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  flex: 1 1 200px;
+  max-width: 320px;
+  padding: 7px 10px;
+  border: 1px solid var(--line);
+  border-radius: 9px;
+  background: var(--canvas);
+  cursor: text;
+  text-align: left;
+  transition: border-color 120ms, background 120ms;
+}
+.bk-search:hover {
+  border-color: var(--line-strong);
+  background: var(--surface);
+}
+
+.bk-field {
+  width: 100%;
+  padding: 9px 11px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: var(--surface);
+  font: 400 14px/1.4 var(--sans);
+  color: var(--ink);
+}
+.bk-field:focus {
+  outline: none;
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px #dbeafe;
+}
+
+.bk-select {
+  width: 100%;
+  padding: 9px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: var(--surface);
+  font: 400 13.5px/1.4 var(--sans);
+  color: var(--ink);
+  cursor: pointer;
+}
+.bk-select:focus {
+  outline: none;
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px #dbeafe;
+}
+
+.bk-label {
+  display: block;
+  font: 500 12px/1 var(--sans);
+  color: var(--muted);
+  margin-bottom: 7px;
+}
+
+.bk-kbd {
+  padding: 1.5px 5px;
+  border-radius: 4px;
+  border: 1px solid var(--line);
+  background: var(--canvas);
+  font: 500 10px/1.4 var(--mono);
+  color: var(--muted-2);
+}
+
+.bk-danger-link {
+  font: 500 12.5px/1 var(--sans);
+  color: var(--muted-2);
+  transition: color 120ms;
+}
+.bk-danger-link:hover {
+  color: var(--danger);
+}
+
+.bk-dark-button {
+  padding: 8px 15px;
+  border-radius: var(--radius);
+  background: var(--ink);
+  color: #fff;
+  font: 600 12.5px/1 var(--sans);
+  transition: background 120ms;
+}
+.bk-dark-button:hover {
+  background: var(--ink-2);
+}
+
+@keyframes bkRise {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@keyframes bkFade {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+/* Honour a reader's reduced-motion setting: none of this animation is load-bearing. */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+  }
+}

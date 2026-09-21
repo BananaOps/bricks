@@ -1,0 +1,193 @@
+version: '3'
+
+# `.env` à la racine (optionnel) surcharge les valeurs ci-dessous : de quoi
+# pointer sur Turso sans toucher au Taskfile.
+dotenv: ['.env']
+
+vars:
+  API_DIR: backend
+  WEB_DIR: frontend
+  CHART: helm/bricks
+  IMAGE: bananaops/bricks
+
+env:
+  # Développement par défaut : un fichier SQLite local, aucun compte requis.
+  # Pour Turso : DATABASE_URL=libsql://<db>-<org>.turso.io et DATABASE_AUTH_TOKEN.
+  DATABASE_URL: '{{.DATABASE_URL | default "file:./bricks.db"}}'
+  ADDR: '{{.ADDR | default ":8080"}}'
+  ALLOWED_ORIGIN: '{{.ALLOWED_ORIGIN | default "http://localhost:5173"}}'
+
+tasks:
+  default:
+    desc: Liste les tâches disponibles
+    cmds:
+      - task --list
+    silent: true
+
+  dev:
+    desc: Lance l'API et l'interface en parallèle (Ctrl-C arrête les deux)
+    summary: |
+      Démarre les deux moitiés de l'application en local.
+
+        API         http://localhost:8080
+        Interface   http://localhost:5173
+
+      La base se crée et se remplit au premier lancement — aucune
+      configuration n'est nécessaire. Vite relaie /api vers l'API, donc le
+      navigateur ne voit qu'une seule origine et CORS n'entre pas en jeu.
+    deps: [dev:api, dev:web]
+
+  dev:api:
+    desc: Lance seulement l'API Go (rechargement manuel)
+    dir: '{{.API_DIR}}'
+    cmds:
+      - echo "→ API sur http://localhost{{.ADDR}} · base {{.DATABASE_URL}}"
+      - go run ./cmd/server
+    interactive: true
+
+  dev:web:
+    desc: Lance seulement l'interface Vite (rechargement à chaud)
+    deps: [install]
+    dir: '{{.WEB_DIR}}'
+    cmds:
+      - echo "→ Interface sur http://localhost:5173"
+      - npm run dev
+    interactive: true
+
+  install:
+    desc: Installe les dépendances npm si le lockfile a changé
+    dir: '{{.WEB_DIR}}'
+    sources:
+      - package.json
+      - package-lock.json
+    generates:
+      - node_modules/.package-lock.json
+    cmds:
+      - npm install
+
+  test:
+    desc: Lance toute la suite de tests
+    cmds:
+      - task: test:api
+      - task: test:web
+
+  test:api:
+    desc: Tests Go — domaine et API de bout en bout
+    dir: '{{.API_DIR}}'
+    cmds:
+      # -count=1 désactive le cache : une suite verte doit l'être à cet instant.
+      - go test -count=1 ./...
+
+  test:web:
+    desc: Tests du moteur de disposition
+    deps: [install]
+    dir: '{{.WEB_DIR}}'
+    cmds:
+      - npm test
+
+  check:
+    desc: Formatage, vet, typecheck strict, lint et sécurité
+    cmds:
+      - task: fmt
+      - task: vet
+      - task: lint
+      - task: security
+
+  fmt:
+    desc: Formate le code Go
+    dir: '{{.API_DIR}}'
+    cmds:
+      - gofmt -w .
+
+  vet:
+    desc: go vet et typecheck TypeScript
+    deps: [install]
+    cmds:
+      - cd {{.API_DIR}} && go vet ./...
+      - cd {{.WEB_DIR}} && npm run typecheck
+
+  lint:
+    desc: golangci-lint, tel que la CI l'exécute
+    dir: '{{.API_DIR}}'
+    cmds:
+      - golangci-lint run --timeout=5m ./...
+
+  security:
+    desc: Analyse gosec, telle que la CI l'exécute
+    dir: '{{.API_DIR}}'
+    cmds:
+      # Depuis le module : à la racine du dépôt, sans go.mod, gosec ne
+      # chargerait aucun paquet et ne rapporterait rien.
+      - gosec -exclude=G103,G115 ./...
+
+  docker:
+    desc: Construit l'image — interface et API dans un seul conteneur
+    cmds:
+      - docker build -t {{.IMAGE}}:dev .
+
+  docker:run:
+    desc: Lance l'image construite sur http://localhost:8080
+    deps: [docker]
+    cmds:
+      - docker run --rm -p 8080:8080 {{.IMAGE}}:dev
+    interactive: true
+
+  helm:lint:
+    desc: Valide le chart, options facultatives comprises
+    cmds:
+      - helm lint {{.CHART}}
+      # Sans ce second passage, Ingress, HPA, Gateway et Route ne seraient
+      # jamais rendus : une erreur de syntaxe n'y apparaîtrait qu'au déploiement.
+      - >-
+        helm lint {{.CHART}}
+        --set ingress.enabled=true
+        --set autoscaling.enabled=true
+        --set gateway.enabled=true
+        --set openshift.enabled=true
+        --set openshift.route.enabled=true
+        --set database.url=libsql://example.turso.io
+
+  helm:template:
+    desc: Rend les manifestes du chart sur la sortie standard
+    cmds:
+      - helm template bricks {{.CHART}} {{.CLI_ARGS}}
+
+  build:
+    desc: Compile le binaire de l'API et le bundle de l'interface
+    cmds:
+      - task: build:api
+      - task: build:web
+
+  build:api:
+    desc: Compile l'API dans backend/bricks-server
+    dir: '{{.API_DIR}}'
+    sources:
+      - '**/*.go'
+      - '**/*.sql'
+      - go.mod
+      - go.sum
+    generates:
+      - bricks-server
+    cmds:
+      - go build -o bricks-server ./cmd/server
+
+  build:web:
+    desc: Typecheck puis bundle de production dans frontend/dist
+    deps: [install]
+    dir: '{{.WEB_DIR}}'
+    cmds:
+      - npm run build
+
+  db:reset:
+    desc: Supprime la base locale — elle sera recréée et remplie au prochain lancement
+    prompt: Supprimer la base locale {{.API_DIR}}/bricks.db ?
+    dir: '{{.API_DIR}}'
+    cmds:
+      - rm -f bricks.db bricks.db-shm bricks.db-wal
+      - echo "Base supprimée · le prochain 'task dev' rejouera les migrations et le jeu de données."
+
+  clean:
+    desc: Supprime les artefacts de build (la base locale est conservée)
+    cmds:
+      - rm -f {{.API_DIR}}/bricks-server
+      - rm -rf {{.WEB_DIR}}/dist

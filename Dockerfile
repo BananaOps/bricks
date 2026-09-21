@@ -14,7 +14,7 @@ COPY frontend/ ./
 RUN npm run build
 
 # Étape 2 : API
-FROM --platform=$BUILDPLATFORM golang:1.26-alpine AS backend-builder
+FROM --platform=$BUILDPLATFORM golang:1.27-alpine AS backend-builder
 
 # Arguments fournis par buildx pour la compilation croisée.
 ARG TARGETOS

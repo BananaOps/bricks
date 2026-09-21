@@ -108,7 +108,7 @@ contributions bienvenues, après discussion dans une issue :
 
 - authentification et autorisation ;
 - collaboration temps réel ;
-- export — le bouton existe, l'écran derrière n'est pas spécifié ;
+- export et partage — les écrans n'étant pas spécifiés, les boutons ont été retirés ;
 - plusieurs roadmaps ou plusieurs années.
 
 Voir [Hors périmètre](./docs/ARCHITECTURE.md#hors-périmètre) pour le

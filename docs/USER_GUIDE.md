@@ -201,8 +201,8 @@ Le dernier thème ne peut pas être supprimé.
 
 ## Ce que l'application ne fait pas
 
-- **Pas d'authentification.** Les avatars de collaborateurs sont décoratifs.
+- **Pas d'authentification.** Ni session, ni compte : la maquette montrait des
+  avatars de collaborateurs, ils ont été retirés plutôt que laissés décoratifs.
 - **Pas de collaboration temps réel.** Deux personnes qui éditent en même temps
   ne se voient pas ; la dernière écriture gagne.
-- **Exporter** et **Partager** sont dessinés mais inertes.
 - **Une seule année.** Le plateau fait douze mois, pas plus.

@@ -132,6 +132,29 @@ tasks:
       - docker run --rm -p 8080:8080 {{.IMAGE}}:dev
     interactive: true
 
+  dev:cluster:
+    desc: Boucle Skaffold sur un cluster — reconstruit et redéploie à chaque modification
+    summary: |
+      Déploie dans le namespace `bricks` du cluster courant et ouvre un tunnel
+      sur http://localhost:8080.
+
+      L'interface compilée est synchronisée dans le conteneur au lieu de
+      déclencher une reconstruction d'image. Pour en profiter, lancez en
+      parallèle, depuis frontend/ :
+
+        npx vite build --watch
+
+      Sans cela la boucle fonctionne quand même, mais chaque changement de
+      l'interface reconstruit l'image entière.
+    cmds:
+      - skaffold dev -f skaffold.dev.yaml
+    interactive: true
+
+  deploy:cluster:
+    desc: Construit, pousse et déploie une fois via Skaffold
+    cmds:
+      - skaffold run -f skaffold.yaml {{.CLI_ARGS}}
+
   helm:lint:
     desc: Valide le chart, options facultatives comprises
     cmds:

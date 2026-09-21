@@ -145,6 +145,21 @@ Liste complète : [`helm/bricks/values.yaml`](../helm/bricks/values.yaml).
 processus mort qu'une base injoignable — ce qui est bien le comportement voulu :
 une application qui ne peut pas lire sa roadmap n'a rien à servir.
 
+### Avec Skaffold
+
+Pour construire, pousser et déployer en une commande :
+
+```bash
+task deploy:cluster     # skaffold run -f skaffold.yaml
+```
+
+L'image part vers le registre et le Deployment la référence par son digest, ce
+qui garantit que le pod exécute exactement ce qui vient d'être construit, même
+si le tag est déplacé ensuite.
+
+La boucle de développement est décrite dans
+[Développement](./DEVELOPMENT.md#développer-contre-un-cluster).
+
 ### Vérifier avant d'appliquer
 
 ```bash

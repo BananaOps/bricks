@@ -1,13 +1,5 @@
 import { CalendarIcon, Icon, ICONS, SearchIcon } from './Icon'
 
-/** Collaborators shown as a stacked avatar cluster. */
-const COLLABORATORS = [
-  { initials: 'ML', background: 'var(--accent)', color: '#fff' },
-  { initials: 'TD', background: '#0d9488', color: '#fff' },
-  { initials: 'AR', background: '#db2777', color: '#fff' },
-  { initials: '+5', background: 'var(--line-soft)', color: 'var(--muted)' },
-]
-
 export interface TopBarProps {
   roadmapName: string
   viewLabel: string
@@ -60,41 +52,6 @@ export function TopBar({ roadmapName, viewLabel, onOpenPalette }: TopBarProps) {
         >
           ⌘K
         </span>
-      </button>
-
-      <div style={{ flex: 1 }} />
-
-      <div style={{ display: 'flex', alignItems: 'center' }} aria-label="Collaborateurs">
-        {COLLABORATORS.map((person, i) => (
-          <div
-            key={person.initials}
-            title={person.initials}
-            style={{
-              width: 26,
-              height: 26,
-              borderRadius: 99,
-              marginLeft: -7,
-              border: '2px solid #fff',
-              background: person.background,
-              color: person.color,
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              font: "600 10.5px/1 var(--sans)",
-              zIndex: COLLABORATORS.length - i,
-            }}
-          >
-            {person.initials}
-          </div>
-        ))}
-      </div>
-
-      <button type="button" className="bk-ghost-button">
-        <Icon path={ICONS.export} />
-        Exporter
-      </button>
-      <button type="button" className="bk-primary-button">
-        Partager
       </button>
     </header>
   )

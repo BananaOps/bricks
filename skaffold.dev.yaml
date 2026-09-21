@@ -1,0 +1,69 @@
+apiVersion: skaffold/v4beta11
+kind: Config
+metadata:
+  name: bricks-dev
+
+build:
+  artifacts:
+    - image: bananaops/bricks
+      docker:
+        dockerfile: Dockerfile
+        buildArgs:
+          BUILDKIT_INLINE_CACHE: "1"
+      sync:
+        manual:
+          # L'interface compilée est copiée dans le conteneur au lieu de
+          # déclencher une reconstruction d'image : une modification de style
+          # passe en une seconde plutôt qu'en une minute.
+          #
+          # Suppose un `npm run build --watch` dans frontend/ pour alimenter
+          # frontend/dist. Les autres changements — Go, Dockerfile, chart —
+          # reconstruisent normalement.
+          - src: 'frontend/dist/**/*'
+            dest: /app/web/dist
+            strip: 'frontend/dist/'
+  tagPolicy:
+    sha256: {}
+  local:
+    push: false
+    useBuildkit: true
+
+manifests:
+  helm:
+    releases:
+      - name: bricks-dev
+        chartPath: helm/bricks
+        namespace: bricks
+        createNamespace: true
+        # Tag seul, sans digest, contrairement à skaffold.yaml : l'image est
+        # construite localement et jamais poussée, donc aucun registre ne peut
+        # en fournir le digest. L'épinglage garde son sens là où l'image part
+        # vers un registre, pas ici.
+        setValueTemplates:
+          image.repository: '{{.IMAGE_REPO_bananaops_bricks}}'
+          image.tag: '{{.IMAGE_TAG_bananaops_bricks}}'
+        setValues:
+          replicaCount: 1
+          # Développement uniquement : la synchronisation écrit dans le
+          # conteneur, ce que les défauts durcis interdisent — utilisateur non
+          # privilégié et système de fichiers racine en lecture seule. Ces
+          # assouplissements ne concernent que cette boucle ; skaffold.yaml et
+          # le chart gardent le profil « restricted ».
+          podSecurityContext.runAsNonRoot: "false"
+          podSecurityContext.runAsUser: "0"
+          podSecurityContext.runAsGroup: "0"
+          securityContext.readOnlyRootFilesystem: "false"
+          resources.requests.cpu: "100m"
+          resources.requests.memory: "128Mi"
+          resources.limits.cpu: "500m"
+          resources.limits.memory: "512Mi"
+
+deploy:
+  helm: {}
+
+portForward:
+  - resourceType: service
+    resourceName: bricks-dev
+    namespace: bricks
+    port: 8080
+    localPort: 8080

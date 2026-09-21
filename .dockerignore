@@ -16,7 +16,6 @@ LICENSE
 
 # Dépendances et artefacts : réinstallés et recompilés dans l'image
 frontend/node_modules/
-frontend/dist/
 backend/bricks-server
 bricks
 *.exe
@@ -32,8 +31,15 @@ backend/*.db
 backend/*.db-shm
 backend/*.db-wal
 
+# frontend/dist n'est volontairement PAS exclu : Skaffold ne synchronise que
+# des fichiers présents dans les dépendances de l'artefact, et l'exclure d'ici
+# rendrait la synchronisation silencieusement inopérante. L'étape frontend de
+# l'image le régénère de toute façon, et il est absent d'un checkout propre.
+
 # Kubernetes
 helm/
+skaffold.yaml
+skaffold.dev.yaml
 
 # Divers
 .env

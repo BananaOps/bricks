@@ -48,6 +48,8 @@ origine et CORS n'entre pas en jeu.
 | `task docker:run`   | lance l'image sur `localhost:8080`                    |
 | `task helm:lint`    | valide le chart, options facultatives comprises       |
 | `task helm:template`| rend les manifestes sur la sortie standard            |
+| `task dev:cluster`  | boucle Skaffold sur un cluster                        |
+| `task deploy:cluster`| construit, pousse et déploie une fois                |
 | `task db:reset`     | efface la base locale — elle sera reconstruite        |
 | `task --list`       | liste complète                                        |
 
@@ -79,6 +81,52 @@ helm/bricks/            chart de déploiement
 docs/                   cette documentation
 Dockerfile              image unique
 ```
+
+## Développer contre un cluster
+
+`task dev` suffit dans la plupart des cas. Quand le comportement à vérifier
+dépend de Kubernetes — sondes, montage du Secret, profil de sécurité — Skaffold
+reconstruit et redéploie à chaque modification :
+
+```bash
+task dev:cluster        # skaffold dev -f skaffold.dev.yaml
+```
+
+Le déploiement va dans le namespace `bricks` du contexte courant, créé au
+besoin, et un tunnel expose <http://localhost:8080>.
+
+### Synchronisation de l'interface
+
+`skaffold.dev.yaml` copie `frontend/dist` dans le conteneur au lieu de
+reconstruire l'image : une modification de style passe en une seconde plutôt
+qu'en une minute. Encore faut-il alimenter ce dossier — depuis `frontend/` :
+
+```bash
+npx vite build --watch
+```
+
+Sans cela la boucle fonctionne quand même, mais chaque changement de l'interface
+reconstruit l'image entière.
+
+> `frontend/dist` est volontairement **absent** de `.dockerignore`. Skaffold ne
+> synchronise que des fichiers présents dans les dépendances de l'artefact ;
+> l'exclure rendrait la règle silencieusement inopérante.
+
+### Deux configurations
+
+| Fichier              | Usage                                                     |
+| -------------------- | --------------------------------------------------------- |
+| `skaffold.yaml`      | déploiement ponctuel : pousse l'image, épingle son digest  |
+| `skaffold.dev.yaml`  | boucle locale : ne pousse rien, synchronise, assouplit la sécurité |
+
+La boucle de développement écrit dans le conteneur, ce que les défauts durcis
+interdisent — utilisateur non privilégié et racine en lecture seule. Elle les
+assouplit donc pour elle seule ; `skaffold.yaml` et le chart gardent le profil
+*restricted*.
+
+L'épinglage par digest n'existe que dans `skaffold.yaml` : l'image de
+développement n'est jamais poussée, donc aucun registre ne peut en fournir le
+digest.
 
 ## Tests
 

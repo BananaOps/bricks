@@ -73,24 +73,6 @@ export function Rail({ active, onNavigate }: RailProps) {
         })}
       </div>
 
-      <div style={{ flex: 1 }} />
-
-      <div
-        title="Votre compte"
-        style={{
-          width: 28,
-          height: 28,
-          borderRadius: 99,
-          background: 'var(--ink-3)',
-          color: 'var(--line)',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          font: "600 11px/1 var(--sans)",
-        }}
-      >
-        ML
-      </div>
     </nav>
   )
 }

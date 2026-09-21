@@ -184,11 +184,17 @@ Ces absences sont des décisions, pas des oublis.
 les deviner aurait figé des choix qui reviennent au produit. L'API est ouverte :
 elle est faite pour vivre derrière une passerelle qui s'en charge.
 
-**Collaboration temps réel.** Les avatars sont décoratifs. Deux éditeurs
-simultanés ne se voient pas et la dernière écriture gagne.
+La maquette dessinait une grappe d'avatars de collaborateurs et un avatar de
+compte dans le rail. Ils ont été **retirés** : une interface qui affiche une
+session inexistante apprend au lecteur à ne plus croire ce qu'elle montre.
 
-**Exporter et Partager.** Dessinés dans la maquette sans écran derrière : rendus,
-mais inertes.
+**Collaboration temps réel.** Deux éditeurs simultanés ne se voient pas et la
+dernière écriture gagne.
+
+**Exporter et Partager.** Dessinés dans la maquette sans écran derrière, ils ont
+été **retirés**. Un bouton qui ne fait rien n'est pas une promesse d'évolution :
+c'est une manière d'apprendre au lecteur à ne plus croire ce que l'interface
+montre. Ils reviendront quand il y aura quelque chose derrière.
 
 **Plusieurs années.** Le plateau fait douze mois. `MonthsPerYear` est une
 constante partagée par le domaine, le schéma et le moteur de disposition ; en

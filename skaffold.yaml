@@ -1,0 +1,48 @@
+apiVersion: skaffold/v4beta11
+kind: Config
+metadata:
+  name: bricks
+
+build:
+  artifacts:
+    - image: bananaops/bricks
+      docker:
+        dockerfile: Dockerfile
+        buildArgs:
+          BUILDKIT_INLINE_CACHE: "1"
+  tagPolicy:
+    gitCommit: {}
+
+manifests:
+  helm:
+    releases:
+      - name: bricks-dev
+        chartPath: helm/bricks
+        namespace: bricks
+        createNamespace: true
+        # Skaffold pousse le dépôt et le tag qu'il vient de construire dans les
+        # valeurs du chart, que le Deployment recompose en `repository:tag`.
+        setValueTemplates:
+          image.repository: '{{.IMAGE_REPO_bananaops_bricks}}'
+          image.tag: '{{.IMAGE_TAG_bananaops_bricks}}@{{.IMAGE_DIGEST_bananaops_bricks}}'
+        setValues:
+          # Sans `database.url`, le chart monte un emptyDir sur /data : la
+          # roadmap repart à zéro à chaque redéploiement, ce qui convient à une
+          # boucle de développement. Pour viser une base Turso :
+          #
+          #   skaffold run \
+          #     --set-value database.url=libsql://<base>-<org>.turso.io
+          #
+          # avec un Secret `authToken` déjà présent dans le namespace, désigné
+          # par database.existingSecret.
+          replicaCount: 1
+
+deploy:
+  helm: {}
+
+portForward:
+  - resourceType: service
+    resourceName: bricks-dev
+    namespace: bricks
+    port: 8080
+    localPort: 8080

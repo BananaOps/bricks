@@ -38,7 +38,6 @@ export function Icon({ path, size = 13, viewBox = '0 0 14 14', strokeWidth = 1.4
 /** Paths for the app's own chrome. Theme icons live in the database. */
 export const ICONS = {
   search: 'M9.4 9.4l2.6 2.6',
-  export: 'M7 1.8v7.4M4 6.4L7 9.4l3-3M2 11.5h10',
   calendar: 'M2 5.8h10M4.8 1.8v1.6M9.2 1.8v1.6',
   close: 'M3 3l8 8M11 3l-8 8',
   plus: 'M7 2.5v9M2.5 7h9',

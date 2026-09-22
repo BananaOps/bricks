@@ -16,10 +16,10 @@ jobs:
     steps:
 
       - name: Check out code
-        uses: actions/checkout@v6
+        uses: actions/checkout@v7
 
       - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v3
+        uses: docker/setup-buildx-action@v4
 
       # Construction sans publication : la PR échoue si l'image ne se bâtit
       # plus, sans attendre le tag de release pour s'en apercevoir.

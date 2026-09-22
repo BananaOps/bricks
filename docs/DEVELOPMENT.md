@@ -4,8 +4,8 @@
 
 | Outil                         | Version | Pourquoi                                |
 | ----------------------------- | ------- | --------------------------------------- |
-| [Go](https://go.dev)          | 1.26+   | l'API                                   |
-| [Node](https://nodejs.org)    | 24+     | l'interface                             |
+| [Go](https://go.dev)          | 1.26+   | l'API — l'image compile en 1.27         |
+| [Node](https://nodejs.org)    | 26+     | l'interface                             |
 | [Task](https://taskfile.dev)  | 3+      | les commandes du projet *(facultatif)*  |
 | Docker                        | —       | construire l'image *(facultatif)*       |
 | [Helm](https://helm.sh)       | 3+      | valider le chart *(facultatif)*         |

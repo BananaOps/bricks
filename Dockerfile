@@ -1,5 +1,5 @@
 # Étape 1 : interface
-FROM --platform=$BUILDPLATFORM node:25-alpine AS frontend-builder
+FROM --platform=$BUILDPLATFORM node:26-alpine AS frontend-builder
 
 WORKDIR /app/frontend
 
@@ -14,7 +14,7 @@ COPY frontend/ ./
 RUN npm run build
 
 # Étape 2 : API
-FROM --platform=$BUILDPLATFORM golang:1.26-alpine AS backend-builder
+FROM --platform=$BUILDPLATFORM golang:1.27-alpine AS backend-builder
 
 # Arguments fournis par buildx pour la compilation croisée.
 ARG TARGETOS
@@ -36,7 +36,7 @@ COPY backend/ ./
 RUN CGO_ENABLED=0 GOOS=${TARGETOS} GOARCH=${TARGETARCH} go build -ldflags="-w -s" -o bricks ./cmd/server
 
 # Étape 3 : image d'exécution
-FROM alpine:3.22
+FROM alpine:3.24
 
 # Utilisateur dédié non privilégié (UID/GID 65532, convention « nonroot » de
 # distroless).

@@ -1,4 +1,6 @@
-import { defineConfig } from 'vite'
+// `vitest/config` et non `vite` : depuis Vitest 4, le bloc `test` n'est plus
+// greffé sur le type de configuration de Vite et doit venir d'ici.
+import { defineConfig } from 'vitest/config'
 import react from '@vitejs/plugin-react'
 
 export default defineConfig({

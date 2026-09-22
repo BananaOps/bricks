@@ -25,8 +25,18 @@ export function lookOf(brick: Brick, themes: Theme[]) {
   }
 }
 
-/** Below this height there is no room for a second line of content. */
-const SHORT_BRICK = 34
+/**
+ * Hauteur minimale de la disposition en colonne.
+ *
+ * Celle-ci empile un titre et une ligne de méta : 12 px de marge verticale,
+ * ~16 px de titre, 3 px d'écart, ~12 px de méta. En deçà, le contenu déborde et
+ * le titre se fait rogner en haut comme en bas — c'était le cas d'une brique
+ * d'un ETP, qui ne laisse que 38 px.
+ *
+ * La disposition en ligne, où titre et charge se partagent une ligne centrée,
+ * reste lisible bien plus bas : mieux vaut y basculer que rogner.
+ */
+const STACKED_MIN_HEIGHT = 12 + 16 + 3 + 12
 
 export interface BrickBlockProps {
   brick: Brick
@@ -80,7 +90,7 @@ export function BrickBlock({
   const absence = brick.kind === 'absence'
   const look = lookOf(brick, themes)
   const solid = blockStyle === 'solid' && !absence
-  const short = box.height - 4 < SHORT_BRICK
+  const short = box.height - 4 < STACKED_MIN_HEIGHT
 
   const fill = solid ? look.base : absence ? 'var(--line-soft)' : look.tint
   const ink = solid ? '#ffffff' : look.ink

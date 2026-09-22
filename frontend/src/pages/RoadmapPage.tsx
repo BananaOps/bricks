@@ -144,7 +144,7 @@ export function RoadmapPage({ board }: RoadmapPageProps) {
     [board, bricks],
   )
 
-  const interaction = useInteraction(bricks, layoutRef, metrics, gridRef, {
+  const interaction = useInteraction(bricks, layoutRef, metrics, gridRef, scrollRef, {
     onClick: (id) => {
       setSelectedId(id)
       setInspectorOpen(true)

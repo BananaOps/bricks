@@ -145,6 +145,24 @@ un bloc repousse ses voisins, et il faut le voir. Le glisser non : il se rend
 comme une copie translatée plus un contour d'atterrissage, laissant la ligne
 d'origine intacte jusqu'au dépôt.
 
+### Défilement de bord
+
+Amener un bloc contre un bord du cadre entraîne la grille : sans cela, il ne
+pourrait rejoindre que les mois et les équipes déjà visibles.
+
+Deux pièges s'y cachent, tous deux traités dans `useInteraction` :
+
+- le bloc vit **dans** le contenu qui défile, donc si la grille avance sous un
+  pointeur immobile, le bloc recule d'autant à l'écran. Les déplacements cumulent
+  donc le trajet du pointeur et celui du défilement ;
+- un bloc en cours de glisser porte un `transform` qui **étend la zone
+  défilable** du conteneur : plus il s'éloigne, plus le cadre croit pouvoir
+  défiler, et la grille file dans le vide. L'amplitude est donc relevée au début
+  du geste, avant qu'aucun `transform` n'entre en jeu, et le défilement s'y tient.
+
+La ligne visée est la plus proche, pas seulement celle survolée : glisser sous
+la dernière équipe veut manifestement dire « celle-ci ».
+
 ### Annuler rejoue l'inverse
 
 L'annulation exécute une **action inverse** contre l'API plutôt que de restaurer

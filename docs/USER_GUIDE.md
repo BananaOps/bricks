@@ -74,6 +74,14 @@ Pendant un glisser, la brique d'origine reste visible en transparence et un
 contour pointillé montre où elle atterrirait — l'équipe visée est celle sous le
 **centre** du bloc, pas sous le curseur, qui se trouve souvent près d'un bord.
 
+**Glisser jusqu'au bord fait avancer la grille.** Amener le bloc contre un bord
+du tableau l'entraîne dans cette direction, d'autant plus vite qu'on s'en
+approche. Sans cela, un bloc ne pourrait rejoindre que les mois et les équipes
+déjà visibles : sur une fenêtre étroite, décembre resterait hors d'atteinte.
+
+Déposer sous la dernière équipe la vise : inutile de survoler la ligne au pixel
+près.
+
 ### Raccourcis
 
 | Touches            | Effet                                  |

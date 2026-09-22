@@ -16,6 +16,16 @@ export type Interaction =
       id: string
       startX: number
       startY: number
+      /**
+       * Défilement du cadre au moment de la prise.
+       *
+       * Le bloc vit dans le contenu qui défile : si la grille avance sous un
+       * pointeur immobile, le bloc recule d'autant à l'écran. Les déplacements
+       * ci-dessous cumulent donc le trajet du pointeur et celui du défilement,
+       * faute de quoi le bloc se décrocherait du curseur.
+       */
+      startScrollLeft: number
+      startScrollTop: number
       dx: number
       dy: number
       /** Where the brick would land if released now. */
@@ -30,6 +40,33 @@ export type Interaction =
 
 /** Pointer travel, in pixels, that separates a click from a drag. */
 const DRAG_THRESHOLD = 4
+
+/**
+ * Largeur de la bande, le long des bords du cadre, qui entraîne le défilement.
+ *
+ * Sans elle, un bloc ne peut rejoindre que les mois déjà visibles : sur une
+ * fenêtre étroite, décembre devient tout simplement inatteignable à la souris.
+ */
+export const EDGE_ZONE = 72
+
+/** Vitesse maximale du défilement de bord, en pixels par image. */
+export const EDGE_SPEED = 20
+
+/**
+ * Vitesse de défilement sur un axe, d'après la distance aux deux bords.
+ *
+ * Elle croît à mesure que le pointeur s'enfonce dans la bande : effleurer le
+ * bord fait avancer doucement, s'y coller fait avancer vite.
+ */
+export function edgeVelocity(distanceToStart: number, distanceToEnd: number): number {
+  if (distanceToStart < EDGE_ZONE) {
+    return -EDGE_SPEED * Math.min(1, (EDGE_ZONE - distanceToStart) / EDGE_ZONE)
+  }
+  if (distanceToEnd < EDGE_ZONE) {
+    return EDGE_SPEED * Math.min(1, (EDGE_ZONE - distanceToEnd) / EDGE_ZONE)
+  }
+  return 0
+}
 
 export interface InteractionCallbacks {
   /** The pointer came up on a brick without moving: treat it as a selection. */
@@ -55,6 +92,23 @@ export interface InteractionApi {
  * cursor still tracks and still commits when the button is released outside the
  * element it started on.
  */
+/**
+ * Ligne visée par un point vertical donné.
+ *
+ * Au-delà de la première et de la dernière, la plus proche l'emporte plutôt que
+ * rien : glisser sous la dernière équipe veut manifestement dire « celle-ci »,
+ * et exiger un survol exact ferait retomber le bloc à sa place sans explication.
+ */
+export function nearestRow(rows: Layout['rowOffsets'], y: number): string | null {
+  let best: { id: string; distance: number } | null = null
+  for (const row of rows) {
+    if (y >= row.y && y <= row.y + row.height) return row.id
+    const distance = y < row.y ? row.y - y : y - (row.y + row.height)
+    if (!best || distance < best.distance) best = { id: row.id, distance }
+  }
+  return best?.id ?? null
+}
+
 export function useInteraction(
   bricks: Brick[],
   /**
@@ -68,9 +122,34 @@ export function useInteraction(
   layoutRef: React.RefObject<Layout>,
   metrics: Metrics,
   gridRef: React.RefObject<HTMLDivElement | null>,
+  /** Le cadre défilant, pour entraîner la grille quand on glisse vers un bord. */
+  scrollRef: React.RefObject<HTMLDivElement | null>,
   callbacks: InteractionCallbacks,
 ): InteractionApi {
   const [interaction, setInteraction] = useState<Interaction | null>(null)
+
+  /** Dernière position connue du pointeur, relue par la boucle de défilement. */
+  const pointer = useRef({ x: 0, y: 0 })
+
+  /**
+   * Amplitude de défilement du cadre, relevée au début du geste.
+   *
+   * Un bloc en cours de glisser porte un `transform` qui étend la zone
+   * défilable du conteneur : plus il s'éloigne, plus le cadre croit pouvoir
+   * défiler, et la grille file dans le vide. Le maximum est donc figé avant
+   * qu'un transform n'entre en jeu, et le défilement s'y tient.
+   */
+  const scrollBounds = useRef({ maxLeft: 0, maxTop: 0 })
+
+  const captureScrollBounds = useCallback(() => {
+    const el = scrollRef.current
+    scrollBounds.current = el
+      ? {
+          maxLeft: Math.max(0, el.scrollWidth - el.clientWidth),
+          maxTop: Math.max(0, el.scrollHeight - el.clientHeight),
+        }
+      : { maxLeft: 0, maxTop: 0 }
+  }, [scrollRef])
 
   // Mutable mirrors keep the window listeners free of stale closures without
   // re-subscribing on every render.
@@ -91,18 +170,34 @@ export function useInteraction(
   }, [gridRef])
 
   useEffect(() => {
-    function onPointerMove(event: PointerEvent) {
+    let edgeFrame: number | null = null
+
+    /**
+     * Recalcule l'état du geste pour une position de pointeur donnée.
+     *
+     * Séparé de l'écouteur : la boucle de défilement de bord doit le rejouer
+     * alors que le pointeur n'a pas bougé, puisque c'est la grille qui avance
+     * sous lui.
+     */
+    function updateFrom(clientX: number, clientY: number) {
       const active = current.current
       if (!active) return
       const { metrics: m } = latest.current
       const l = layoutRef.current
+      const scroller = scrollRef.current
 
       switch (active.mode) {
         case 'drag': {
-          const dx = event.clientX - active.startX
-          const dy = event.clientY - active.startY
           const brick = latest.current.bricks.find((b) => b.id === active.id)
           if (!brick) return
+
+          // Trajet du pointeur, augmenté de ce que la grille a défilé depuis la
+          // prise : sans ce cumul, le bloc se décrocherait du curseur dès que
+          // le défilement de bord entre en jeu.
+          const dx =
+            clientX - active.startX + ((scroller?.scrollLeft ?? 0) - active.startScrollLeft)
+          const dy =
+            clientY - active.startY + ((scroller?.scrollTop ?? 0) - active.startScrollTop)
 
           // The row under the brick's centre wins, not the row under the
           // cursor: the pointer often sits near an edge while the block as a
@@ -111,8 +206,7 @@ export function useInteraction(
           let targetTeam = active.targetTeam
           if (box) {
             const centre = box.y + dy + box.height / 2
-            const row = l.rowOffsets.find((r) => centre >= r.y && centre <= r.y + r.height)
-            if (row) targetTeam = row.id
+            targetTeam = nearestRow(l.rowOffsets, centre) ?? targetTeam
           }
 
           const months = Math.round(dx / m.monthWidth)
@@ -136,7 +230,7 @@ export function useInteraction(
         case 'resize-etp': {
           // Dragging up grows the block, so the sign is inverted; half a row
           // unit per 0.5 ETP keeps the handle tracking the block's own edge.
-          const steps = Math.round((active.startY - event.clientY) / (m.unit / 2)) * 0.5
+          const steps = Math.round((active.startY - clientY) / (m.unit / 2)) * 0.5
           setInteraction({ ...active, etp: clampEtp(active.originEtp + steps) })
           return
         }
@@ -144,7 +238,7 @@ export function useInteraction(
         case 'resize-window': {
           const brick = latest.current.bricks.find((b) => b.id === active.id)
           if (!brick) return
-          const months = Math.round((event.clientX - active.startX) / m.monthWidth)
+          const months = Math.round((clientX - active.startX) / m.monthWidth)
           setInteraction({
             ...active,
             duration: Math.max(
@@ -159,14 +253,60 @@ export function useInteraction(
           const origin = gridOrigin()
           setInteraction({
             ...active,
-            x: event.clientX - origin.left - m.labelWidth,
-            y: event.clientY - origin.top,
+            x: clientX - origin.left - m.labelWidth,
+            y: clientY - origin.top,
           })
         }
       }
     }
 
+    /**
+     * Entraîne la grille quand le geste approche d'un bord du cadre.
+     *
+     * La boucle ne tourne que pendant un glisser ou un tracé de lien, et
+     * s'arrête d'elle-même dès que le pointeur quitte les bandes de bord.
+     */
+    function edgeStep() {
+      edgeFrame = null
+      const active = current.current
+      const scroller = scrollRef.current
+      if (!active || !scroller) return
+      if (active.mode !== 'drag' && active.mode !== 'link') return
+
+      const rect = scroller.getBoundingClientRect()
+      const { x, y } = pointer.current
+      const vx = edgeVelocity(x - rect.left, rect.right - x)
+      const vy = edgeVelocity(y - rect.top, rect.bottom - y)
+
+      if (vx !== 0 || vy !== 0) {
+        const before = { left: scroller.scrollLeft, top: scroller.scrollTop }
+        const { maxLeft, maxTop } = scrollBounds.current
+        // Bornes relevées avant le geste, et non lues à l'instant : le bloc
+        // translaté aurait sinon repoussé la limite au fil du glisser.
+        scroller.scrollLeft = Math.min(maxLeft, Math.max(0, before.left + vx))
+        scroller.scrollTop = Math.min(maxTop, Math.max(0, before.top + vy))
+        // Rejouer le geste après un défilement effectif seulement : en butée,
+        // l'état n'a pas changé et un rendu de plus n'apporterait rien.
+        if (scroller.scrollLeft !== before.left || scroller.scrollTop !== before.top) {
+          updateFrom(x, y)
+        }
+      }
+
+      edgeFrame = requestAnimationFrame(edgeStep)
+    }
+
+    function onPointerMove(event: PointerEvent) {
+      pointer.current = { x: event.clientX, y: event.clientY }
+      if (!current.current) return
+      updateFrom(event.clientX, event.clientY)
+      if (edgeFrame === null) edgeFrame = requestAnimationFrame(edgeStep)
+    }
+
     function onPointerUp(event: PointerEvent) {
+      if (edgeFrame !== null) {
+        cancelAnimationFrame(edgeFrame)
+        edgeFrame = null
+      }
       const active = current.current
       if (!active) return
       setInteraction(null)
@@ -214,19 +354,24 @@ export function useInteraction(
     return () => {
       window.removeEventListener('pointermove', onPointerMove)
       window.removeEventListener('pointerup', onPointerUp)
+      if (edgeFrame !== null) cancelAnimationFrame(edgeFrame)
     }
-  }, [gridOrigin, layoutRef])
+  }, [gridOrigin, layoutRef, scrollRef])
 
   const startDrag = useCallback(
     (event: React.PointerEvent, id: string) => {
       event.stopPropagation()
       const brick = brickById(id)
       if (!brick) return
+      pointer.current = { x: event.clientX, y: event.clientY }
+      captureScrollBounds()
       setInteraction({
         mode: 'drag',
         id,
         startX: event.clientX,
         startY: event.clientY,
+        startScrollLeft: scrollRef.current?.scrollLeft ?? 0,
+        startScrollTop: scrollRef.current?.scrollTop ?? 0,
         dx: 0,
         dy: 0,
         targetMonth: brick.startMonth,
@@ -234,7 +379,7 @@ export function useInteraction(
         moved: false,
       })
     },
-    [brickById],
+    [brickById, captureScrollBounds, scrollRef],
   )
 
   const startResizeEtp = useCallback(
@@ -272,6 +417,8 @@ export function useInteraction(
   const startLink = useCallback(
     (event: React.PointerEvent, id: string) => {
       event.stopPropagation()
+      pointer.current = { x: event.clientX, y: event.clientY }
+      captureScrollBounds()
       const origin = gridOrigin()
       setInteraction({
         mode: 'link',
@@ -280,7 +427,7 @@ export function useInteraction(
         y: event.clientY - origin.top,
       })
     },
-    [gridOrigin, metrics.labelWidth],
+    [captureScrollBounds, gridOrigin, metrics.labelWidth],
   )
 
   return { interaction, startDrag, startResizeEtp, startResizeWindow, startLink }
